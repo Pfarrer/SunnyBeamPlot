@@ -1,17 +1,23 @@
 #!/bin/bash
 
 # Config Variables
-TARGET_DIR="generated"
+DIR="/opt/SunnyBeamPlot/"
+SOURCE_DIR="/media/sunnybeam/SBEAM"
+TARGET_DIR="/var/www"
 
 # Runtime helper variables
-m_csvs=$(find . -regextype posix-extended -regex "\./[0-9]{4}-.*\.CSV")
-d_csvs=$(find . -regextype posix-extended -regex "\./[0-9]{2}-.*\.CSV")
+m_csvs=$(find $SOURCE_DIR -regextype posix-extended -regex ".*/[0-9]{4}-.*\.CSV")
+d_csvs=$(find $SOURCE_DIR -regextype posix-extended -regex ".*/[0-9]{2}-.*\.CSV")
 
 # Create dirs
 m_target_dir=$TARGET_DIR
 d_target_dir=$TARGET_DIR/days
+backup_target_dir=$TARGET_DIR/backup
 mkdir -p $m_target_dir
 mkdir -p $d_target_dir
+mkdir -p $backup_target_dir
+
+cd $DIR
 
 function get_day_total {
 	local subtotal=$(tail -2 $1 | head -1 | tr ';' '\n' | tail -n +2)
@@ -21,18 +27,23 @@ function get_day_total {
 
 for csv in $d_csvs
 do
-	target_file="$d_target_dir/${csv%.*}.png"
-
-	# DEBUG
-	touch $csv
+	day_name="$(basename ${csv%.*})"
+	target_file="$d_target_dir/$day_name.png"
 
 	# Only run for newer CSV file than PNG file
 	if [ "$csv" -nt "$target_file" ]; then
-		echo "Generating ${csv%.*} ..."
+		echo "Generating $csv -> $target_file ..."
 
 		total=$(get_day_total $csv)
-		title=$(echo ${csv%.*} | sed "s|^\./||")
+		title=$(echo $day_name | sed "s|^\./||")
 		title="Werte vom $title, Tagessumme: $total kWh"
-		gnuplot -e "output_name='$target_file';title='$title'" day.gnuplot < $csv
+		
+		tmp_file=$(mktemp)
+		cat $csv | tr "," "." > $tmp_file
+		gnuplot -e "input_name='$tmp_file';output_name='$target_file';title='$title'" day.gnuplot
+		rm $tmp_file
+
+		# Copy backup$
+		cp $csv "$backup_target_dir/$day_name.CSV"
 	fi
 done
