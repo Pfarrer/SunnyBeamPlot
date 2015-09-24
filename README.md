@@ -1,4 +1,4 @@
-# SunnyBeanPlot
+# SunnyBeaMPlot
 
 This script uses GnuPlot to create nice graphs to visiualize
 the yield of your solar installation.
