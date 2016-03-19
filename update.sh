@@ -47,3 +47,8 @@ do
 		cp $csv "$backup_target_dir/$day_name.CSV"
 	fi
 done
+
+# Create today link
+today=$(date +%y-%m-%d)
+rm $TARGET_DIR/today.png
+ln -s $d_target_dir/$today.png $TARGET_DIR/today.png
